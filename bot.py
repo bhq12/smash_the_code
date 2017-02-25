@@ -128,7 +128,8 @@ def get_all_neighbours(block, grid):
 
 def plan_turn(grid, future_colours):
 	highest_score = 0
-	highest_score_column = random.randint(0,GRID_WIDTH - 1)
+	#highest_score_column = random.randint(0,GRID_WIDTH - 1)
+	highest_score_column = 0
 	for i in range(GRID_WIDTH):
 		column_full = grid[GRID_HEIGHT - 1][i] != EMPTY_CELL_CHAR
 		
@@ -141,20 +142,22 @@ def plan_turn(grid, future_colours):
 			scoring_blocks = check_turn(grid_copy)
 			for block in scoring_blocks:
 				erase_block(grid_copy, block)
-			
-		for j in range(GRID_WIDTH):
-			column_full = grid_copy[GRID_HEIGHT - 1][i] != EMPTY_CELL_CHAR
-			if column_full != True:
-				grid_copy_copy = copy.deepcopy(grid_copy)
-				score = len(scoring_blocks)
-				simulate_placement(grid_copy_copy, future_colours[1], j)
-				score_2 = len(check_turn(grid_copy_copy))
-				if(score + score_2 > highest_score):
-					highest_score = score + score_2
-					highest_score_column = i
+		if len(scoring_blocks) == 0:
+			for j in range(GRID_WIDTH):
+				column_full = grid_copy[GRID_HEIGHT - 1][i] != EMPTY_CELL_CHAR
+				if column_full != True:
+					grid_copy_copy = copy.deepcopy(grid_copy)
+					score = len(scoring_blocks)
+					simulate_placement(grid_copy_copy, future_colours[1], j)
+					score_2 = len(check_turn(grid_copy_copy))
+					if(score + score_2 > highest_score):
+						highest_score = score + score_2
+						highest_score_column = i
+	print(highest_score_column, file=sys.stderr)
 	if highest_score == 0:
-		while grid[GRID_HEIGHT - 1][i] == EMPTY_CELL_CHAR:
+		while grid[GRID_HEIGHT - 1][highest_score_column] == EMPTY_CELL_CHAR:
 			highest_score_column = (highest_score_column + 1)%GRID_WIDTH
+			print(highest_score_column, file=sys.stderr)
 	return highest_score_column
 
 def find_shortest_neighbour(place):
