@@ -1,12 +1,15 @@
-import sys
+import copy
 import math
+import random
+import sys
+
 
 GRID_HEIGHT = 12
 GRID_WIDTH = 6
 FUTURE_BLOCK_ARRAY_SIZE = 8
 SKULL_BLOCK_CHAR = '0'
 EMPTY_CELL_CHAR = '.'
-MINIMUM_ADJACENT = 3
+MINIMUM_ADJACENT = 4
 
 #('.' = empty, '0' = skull block, '1' to '5' = colored block)
 
@@ -49,6 +52,13 @@ def read_inputs():
 	grid.reverse()
 	opponent_grid.reverse()
 
+def simulate_placement(grid, colour, column):
+	block1 = Block(column, 0, colour)
+	block2 = Block(column, 0, colour)
+	
+	drop_block_into_grid(block1, grid)
+	drop_block_into_grid(block1, grid)
+	
 def drop_block_into_grid(block, grid):
 	height = GRID_HEIGHT - 1
 	row = block.x
@@ -82,24 +92,21 @@ def check_turn(grid):
 		for x in range(GRID_WIDTH):
 			block = grid[y][x]
 			if block.colour != EMPTY_CELL_CHAR and block.colour != SKULL_BLOCK_CHAR:
-				same_neighbours = find_same_neighbours(block, grid)
+				same_neighbours = find_identical_adjacent_blocks(block, grid)
 				if len(same_neighbours) >= MINIMUM_ADJACENT:
 					scoring_blocks = scoring_blocks.union(same_neighbours)
 	return scoring_blocks
 
-def find_same_neighbours(block, grid):
-	visited, same_neighbours = find_same_neighbours(block, grid, set(), 1, {block})
+def find_identical_adjacent_blocks(block, grid):
+	visited, same_neighbours = find_same_neighbours(block, grid, set(), {block})
 	return same_neighbours
 	
 def find_same_neighbours(block, grid, visited, same_neighbours):
-	#visited = set()
 	visited.add(block)
-	#neighbour_count = 0
 	neighbours = get_all_neighbours(block, grid)
-	same_neighbours = [n for n in neighbours if n.colour == block.colour and n not in visited]
+	same_colour_neighbours = [n for n in neighbours if n.colour == block.colour and n not in visited]
 	
-	for neighbour in same_neighbours:
-		neighbour_count += 1
+	for neighbour in same_colour_neighbours:
 		same_neighbours.add(neighbour)
 		visited, same_neighbours = find_same_neighbours(neighbour, grid, visited, same_neighbours)
 	
@@ -116,7 +123,40 @@ def get_all_neighbours(block, grid):
 	if(block.y < GRID_HEIGHT - 1):
 		neighbours.append(grid[block.y + 1][block.x])#up
 	return neighbours
-	
+
+
+
+def plan_turn(grid, future_colours):
+	highest_score = 0
+	highest_score_column = random.randint(0,GRID_WIDTH - 1)
+	for i in range(GRID_WIDTH):
+		column_full = grid[GRID_HEIGHT - 1][i] != EMPTY_CELL_CHAR
+		
+		if(column_full):
+			scoring_blocks = set()
+			grid_copy = copy.deepcopy(grid)
+		else:
+			grid_copy = copy.deepcopy(grid)
+			simulate_placement(grid_copy, future_colours[0], i)
+			scoring_blocks = check_turn(grid_copy)
+			for block in scoring_blocks:
+				erase_block(grid_copy, block)
+			
+		for j in range(GRID_WIDTH):
+			column_full = grid_copy[GRID_HEIGHT - 1][i] != EMPTY_CELL_CHAR
+			if column_full != True:
+				grid_copy_copy = copy.deepcopy(grid_copy)
+				score = len(scoring_blocks)
+				simulate_placement(grid_copy_copy, future_colours[1], j)
+				score_2 = len(check_turn(grid_copy_copy))
+				if(score + score_2 > highest_score):
+					highest_score = score + score_2
+					highest_score_column = i
+	if highest_score == 0:
+		while grid[GRID_HEIGHT - 1][i] == EMPTY_CELL_CHAR:
+			highest_score_column = (highest_score_column + 1)%GRID_WIDTH
+	return highest_score_column
+
 def find_shortest_neighbour(place):
 	left = top_row[(place - 1)%GRID_WIDTH]
 	middle = top_row[(place)%GRID_WIDTH]
@@ -150,19 +190,8 @@ while True:
 
 	# Write an action using print
 	# To debug: print("Debug messages...", file=sys.stderr)
-	print("top_row:" + str(top_row), file=sys.stderr)
-	print("top_row_height:" + str(top_row_height), file=sys.stderr)
 	# "x": the column in which to drop your blocks
-
-	print("3-in-a-row-blocks opponent: " + str(check_turn(opponent_grid)), file=sys.stderr)
-	print(opponent_grid, file=sys.stderr)
-	position = find_shortest_neighbour(place)
+	print(plan_turn(grid, future_colours))
 	
-	for i in range(len(top_row)):
-		if(int(top_row[i]) == future_colours[0]):
-			position = i
-	
-	print(position)
-	place = place + 1
 	
 	
