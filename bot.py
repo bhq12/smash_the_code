@@ -4,22 +4,37 @@ import math
 GRID_HEIGHT = 12
 GRID_WIDTH = 6
 FUTURE_BLOCK_ARRAY_SIZE = 8
+SKULL_BLOCK_CHAR = '0'
+EMPTY_CELL_CHAR = '.'
+
+#('.' = empty, '0' = skull block, '1' to '5' = colored block)
+class Block:
+	def __init__(self, x, y, colour = EMPTY_CELL_CHAR):
+		self.x = x
+		self.y = y
+		self.colour = colour
 	
 def read_inputs():
 	for i in range(FUTURE_BLOCK_ARRAY_SIZE):
 		future_colours[i] = [int(j) for j in input().split()][0]
 	score = int(input())
 	for i in range(GRID_HEIGHT):
-		grid[i] = input()
+		row = input()
+		grid[i] = [None] * GRID_WIDTH
+		for j in range(len(row)):
+			grid[i][j] = Block(i,j,row[j])
 	opponent_score = int(input())
 	for i in range(GRID_HEIGHT):
-		opponent_grid[i] = input()	# One line of the map ('.' = empty, '0' = skull block, '1' to '5' = colored block)
+		row = input()
+		opponent_grid[i] = [None] * GRID_WIDTH
+		for j in range(len(row)):
+			opponent_grid[i][j] = Block(i,j,row[j])
 	
 	for row in range(len(grid)):
 		for i in range(len(grid[row])):
-			point = grid[row][i]
-			if(point != '.' and point != '0'):
-				top_row[i] = point
+			block = grid[row][i]
+			if(block.colour != EMPTY_CELL_CHAR):
+				top_row[i] = block.colour
 				top_row_height[i] = row
 
 
